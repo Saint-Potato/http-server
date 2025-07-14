@@ -114,11 +114,25 @@ void manage_client_request(int client_fd) {
   std::istringstream iss(request_line);
   std::string method, path, version;
   iss >> method >> path >> version;
-
+  std:: string echo_req = "/echo/";
   if (method == "GET" && path == "/") {
     const char *response = "HTTP/1.1 200 OK\r\n\r\n";
     send(client_fd, response, strlen(response), 0);
-  } else {
+  }
+  else if (method == "GET" && path.rfind(echo_req, 0) == 0) {
+    std::string echo_str = path.substr(echo_req.length());  // Extract {str}
+    std::string body = echo_str;
+    std::string response =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: " + std::to_string(body.size()) + "\r\n"
+        "\r\n" +
+        echo_str;
+
+    send(client_fd, response.c_str(), response.size(), 0);
+
+  } 
+  else {
     const char *response = "HTTP/1.1 404 Not Found\r\n\r\n";
     send(client_fd, response, strlen(response), 0);
   }
