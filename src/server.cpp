@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sstream>
+#include <map>
+#include <algorithm>  
 
 // void respond()
 
@@ -115,6 +117,22 @@ void manage_client_request(int client_fd) {
   std::string method, path, version;
   iss >> method >> path >> version;
   std:: string echo_req = "/echo/";
+  std::map<std::string, std::string> headers;
+
+char* header_line = std::strtok(nullptr, "\r\n");
+while (header_line != nullptr && strlen(header_line) > 0) {
+    std::string line(header_line);
+    size_t colon_pos = line.find(": ");
+    if (colon_pos != std::string::npos) {
+        std::string key = line.substr(0, colon_pos);
+        std::string value = line.substr(colon_pos + 2);
+        // Make header name lowercase for case-insensitive matching
+        std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+        headers[key] = value;
+    }
+    header_line = std::strtok(nullptr, "\r\n");
+}
+
   if (method == "GET" && path == "/") {
     const char *response = "HTTP/1.1 200 OK\r\n\r\n";
     send(client_fd, response, strlen(response), 0);
@@ -125,13 +143,25 @@ void manage_client_request(int client_fd) {
     std::string response =
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: text/plain\r\n"
-        "Content-Length: " + std::to_string(body.size()) + "\r\n"
+        "Content-Length: " + std::to_string(echo_str.size()) + "\r\n"
         "\r\n" +
         echo_str;
 
     send(client_fd, response.c_str(), response.size(), 0);
 
-  } 
+  }
+  else if (method == "GET" && path == "/user-agent") {
+    std::string user_agent = headers.count("user-agent") ? headers["user-agent"] : "Unknown";
+
+    std::string response =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: " + std::to_string(user_agent.size()) + "\r\n"
+        "\r\n" +
+        user_agent;
+
+    send(client_fd, response.c_str(), response.size(), 0);
+}
   else {
     const char *response = "HTTP/1.1 404 Not Found\r\n\r\n";
     send(client_fd, response, strlen(response), 0);
