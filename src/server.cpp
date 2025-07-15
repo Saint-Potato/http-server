@@ -1,17 +1,31 @@
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <netdb.h>
+#include <sstream>
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sstream>
-#include <map>
-#include <algorithm>  
+#include<thread>
 
 // void respond()
+
+/*
+GET
+/user-agent
+HTTP/1.1
+\r\n
+
+// Headers
+Host: localhost:4221\r\n
+User-Agent: foobar/1.2.3\r\n  // Read this value
+Accept: /\r\n
+\r\n
+*/
 
 void manage_client_request(int client_fd);
 
@@ -74,96 +88,104 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  struct sockaddr_in
-      client_addr; // holds client's address and port after connect
-  int client_addr_len = sizeof(client_addr);
+  while (true) {
+    struct sockaddr_in
+        client_addr; // holds client's address and port after connect
+    int client_addr_len = sizeof(client_addr);
 
-  std::cout << "Waiting for a client to connect...\n";
+    std::cout << "Waiting for a client to connect...\n";
 
-  int client_fd = accept(server_fd, (struct sockaddr *)&client_addr,
-                         (socklen_t *)&client_addr_len);
-  // accept() blocks until a client connects
-  // Takes the listening server_fd.
-  // Fills client_addr with the client’s IP and port.
-  // Returns a new socket file descriptor client_fd for this particular client.
+    int client_fd = accept(server_fd, (struct sockaddr *)&client_addr,
+                           (socklen_t *)&client_addr_len);
+    // accept() blocks until a client connects
+    // Takes the listening server_fd.
+    // Fills client_addr with the client’s IP and port.
+    // Returns a new socket file descriptor client_fd for this particular client.
 
-  if (client_fd < 0) {
-    std::cout << "Failed to accept connection." << std::endl;
-  } else {
-    manage_client_request(client_fd);
+    if (client_fd < 0) {
+      std::cout << "Failed to accept connection." << std::endl;
+      continue;
+    }
+
+    // creating thread for each connection
+    std::thread client_thread(manage_client_request, client_fd);
+    client_thread.detach();  // lets thread run independently
+
   }
 
   std::cout << "Client connected\n";
 
-  close(server_fd);
+  // close(server_fd);
 
   return 0;
 }
 
 void manage_client_request(int client_fd) {
+  //                <<----------Reading REQUEST----------------------->>
   char buffer[4096];
   int bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-
   if (bytes_read < 0) {
     std::cerr << "Failed to read from client.\n";
     close(client_fd);
-    exit(1);
+    return;
   }
-
   buffer[bytes_read] = '\0';
 
+  // Parses the request and extracts method, path and HTTP version
   std::string request_line = std::strtok(buffer, "\r\n");
   std::istringstream iss(request_line);
   std::string method, path, version;
   iss >> method >> path >> version;
-  std:: string echo_req = "/echo/";
-  std::map<std::string, std::string> headers;
 
-char* header_line = std::strtok(nullptr, "\r\n");
-while (header_line != nullptr && strlen(header_line) > 0) {
+  // Parse and extract  <--------HEADERS--------------->
+  std::map<std::string, std::string> headers;
+  char *header_line = std::strtok(
+      nullptr, "\r\n"); // continues strtok() after parsing request line
+  while (header_line != nullptr && strlen(header_line) > 0) {
     std::string line(header_line);
-    size_t colon_pos = line.find(": ");
-    if (colon_pos != std::string::npos) {
-        std::string key = line.substr(0, colon_pos);
-        std::string value = line.substr(colon_pos + 2);
-        // Make header name lowercase for case-insensitive matching
-        std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-        headers[key] = value;
+    int colon_pos = line.find(": ");
+    if (colon_pos != -1) {
+      std::string key = line.substr(0, colon_pos);
+      std::string value = line.substr(colon_pos + 2);
+      // headers names are case insensitive so converting all to lower case
+      std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+      headers[key] = value;
     }
     header_line = std::strtok(nullptr, "\r\n");
-}
-
+  }
+  std::string echo_req = "/echo/";
   if (method == "GET" && path == "/") {
     const char *response = "HTTP/1.1 200 OK\r\n\r\n";
     send(client_fd, response, strlen(response), 0);
-  }
-  else if (method == "GET" && path.rfind(echo_req, 0) == 0) {
-    std::string echo_str = path.substr(echo_req.length());  // Extract {str}
+  } else if (method == "GET" && path.rfind(echo_req, 0) == 0) {
+    std::string echo_str = path.substr(echo_req.length()); // Extract {str}
     std::string body = echo_str;
-    std::string response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "Content-Length: " + std::to_string(echo_str.size()) + "\r\n"
-        "\r\n" +
-        echo_str;
+    std::string response = "HTTP/1.1 200 OK\r\n"
+                           "Content-Type: text/plain\r\n"
+                           "Content-Length: " +
+                           std::to_string(echo_str.size()) +
+                           "\r\n"
+                           "\r\n" +
+                           echo_str;
 
     send(client_fd, response.c_str(), response.size(), 0);
 
-  }
-  else if (method == "GET" && path == "/user-agent") {
-    std::string user_agent = headers.count("user-agent") ? headers["user-agent"] : "Unknown";
+  } else if (method == "GET" && path == "/user-agent") {
+    std::string user_agent =
+        headers.count("user-agent") ? headers["user-agent"] : "Unknown";
 
-    std::string response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "Content-Length: " + std::to_string(user_agent.size()) + "\r\n"
-        "\r\n" +
-        user_agent;
+    std::string response = "HTTP/1.1 200 OK\r\n"
+                           "Content-Type: text/plain\r\n"
+                           "Content-Length: " +
+                           std::to_string(user_agent.size()) +
+                           "\r\n"
+                           "\r\n" +
+                           user_agent;
 
     send(client_fd, response.c_str(), response.size(), 0);
-}
-  else {
+  } else {
     const char *response = "HTTP/1.1 404 Not Found\r\n\r\n";
     send(client_fd, response, strlen(response), 0);
   }
+  close(client_fd);
 }
