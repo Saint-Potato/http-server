@@ -1,7 +1,8 @@
 #include <algorithm>
 #include <arpa/inet.h>
-#include <cstdlib>
+// #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <netdb.h>
@@ -9,8 +10,10 @@
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <thread>
 #include <unistd.h>
-#include<thread>
+
+std::string base_dir = "."; // default directory
 
 // void respond()
 
@@ -33,6 +36,10 @@ int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
+
+  if (argc == 3 && std::string(argv[1]) == "--directory") {
+    base_dir = argv[2];
+  }
 
   //   A file descriptor (FD) is a non-negative integer that represents an open
   //   file, socket, or input/output resource in your program. Think of it as a
@@ -100,7 +107,8 @@ int main(int argc, char **argv) {
     // accept() blocks until a client connects
     // Takes the listening server_fd.
     // Fills client_addr with the client’s IP and port.
-    // Returns a new socket file descriptor client_fd for this particular client.
+    // Returns a new socket file descriptor client_fd for this particular
+    // client.
 
     if (client_fd < 0) {
       std::cout << "Failed to accept connection." << std::endl;
@@ -109,8 +117,7 @@ int main(int argc, char **argv) {
 
     // creating thread for each connection
     std::thread client_thread(manage_client_request, client_fd);
-    client_thread.detach();  // lets thread run independently
-
+    client_thread.detach(); // lets thread run independently
   }
 
   std::cout << "Client connected\n";
@@ -183,6 +190,24 @@ void manage_client_request(int client_fd) {
                            user_agent;
 
     send(client_fd, response.c_str(), response.size(), 0);
+  } else if (method == "GET" && path.rfind("/files/", 0) == 0) {
+    std::string filename = base_dir + "/" + path.substr(std::string("/files/").length());
+    std::ifstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+      const char *not_found_response = "HTTP/1.1 404 Not Found\r\n\r\n";
+      send(client_fd, not_found_response, strlen(not_found_response), 0);
+    } else {
+      std::ostringstream oss;
+      oss << file.rdbuf();
+      std::string file_content = oss.str();
+      std::string response = "HTTP/1.1 200 OK\r\n"
+                             "Content-Type: application/octet-stream\r\n"
+                             "Content-Length: " +
+                             std::to_string(file_content.size()) + "\r\n\r\n" +
+                             file_content;
+
+      send(client_fd, response.c_str(), response.size(), 0);
+    }
   } else {
     const char *response = "HTTP/1.1 404 Not Found\r\n\r\n";
     send(client_fd, response, strlen(response), 0);
