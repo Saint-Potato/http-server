@@ -57,4 +57,4 @@ public:
     void handle(const HttpRequest& request, HttpResponse& response);
 };
 
-void manage_client_request(int client_fd);
+void handleClient(int client_fd, const std::string& base_dir);

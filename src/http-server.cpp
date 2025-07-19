@@ -41,7 +41,7 @@ void HttpServer::setupSocket() {
         exit(1); // non-zero status to indicate failure
     }
 
-    // Since the tester restarts your program quite often, setting SO_REUSEADDR ensures that we don't run into 'Address already in use' errors
+    // Since the tester restarts program quite often, setting SO_REUSEADDR ensures that we don't run into 'Address already in use' errors
     int reuse = 1;
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
         std::cerr << "setsockopt failed\n";
@@ -91,59 +91,61 @@ void HttpServer::acceptConnections() {
             continue;
         }
 
-        std::thread client_thread(manage_client_request, client_fd);
+        std::thread client_thread(handleClient, client_fd, base_dir);
         client_thread.detach();
     }
 }
 
 HttpRequest HttpRequest::parse(int client_fd, char* buffer, int bytes_read) {
     HttpRequest request;
-    buffer[bytes_read] = '\0'; // Null-terminate to safely work with strtok
 
-    // Parsing Request Line
-    std::string request_line = std::strtok(buffer, "\r\n");
-    std::istringstream iss(request_line);
-    iss >> request.method >> request.path >> request.version;
+    buffer[bytes_read] = '\0';
+    std::string raw_request(buffer);
 
-    // Parsing Headers
+    // Find the split point between headers and body
+    size_t header_end = raw_request.find("\r\n\r\n");
+    if (header_end == std::string::npos) return request;
+
+    std::string header_section = raw_request.substr(0, header_end);
+    std::istringstream header_stream(header_section);
+
+    // Parse request line
+    std::string request_line;
+    std::getline(header_stream, request_line);
+    std::istringstream rl_stream(request_line);
+    rl_stream >> request.method >> request.path >> request.version;
+
+    // Parse headers
     std::map<std::string, std::string> headers;
-    char* header_line = std::strtok(nullptr, "\r\n");
-    // continues strtok() after parsing request line
-    while (header_line != nullptr && strlen(header_line) > 0) {
-        std::string line(header_line);
-        int colon_pos = line.find(": ");
-        if (colon_pos != -1) {
-            std::string key = line.substr(0, colon_pos);
-            std::string value = line.substr(colon_pos + 2);
+    std::string line;
+    while (std::getline(header_stream, line)) {
+        if (line.back() == '\r') line.pop_back(); // Remove \r
+        size_t pos = line.find(": ");
+        if (pos != std::string::npos) {
+            std::string key = line.substr(0, pos);
+            std::string value = line.substr(pos + 2);
             std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-            // headers names are case insensitive so converting all to lower case
             headers[key] = value;
         }
-        header_line = std::strtok(nullptr, "\r\n");
     }
     request.headers = headers;
 
-    // Parse Body if Content-Length present
+    // Parse body
     int content_length = 0;
     if (headers.find("content-length") != headers.end()) {
         content_length = std::stoi(headers["content-length"]);
     }
 
-    char* body_start = strstr(buffer, "\r\n\r\n");
-    if (body_start != nullptr) {
-        body_start += 4; // skip past \r\n\r\n
-        int header_bytes = body_start - buffer;
-        int body_bytes_already_read = bytes_read - header_bytes;
+    request.body = raw_request.substr(header_end + 4);
+    int already_read = request.body.size();
 
-        request.body = std::string(body_start, body_bytes_already_read);
-
-        // If full body not yet read, read remaining
-        while ((int)request.body.size() < content_length) {
-            char more[4096];
-            int more_read = recv(client_fd, more, sizeof(more), 0);
-            if (more_read <= 0) break;
-            request.body.append(more, more_read);
-        }
+    // Read more if Content-Length not satisfied
+    while (already_read < content_length) {
+        char more[4096];
+        int n = recv(client_fd, more, sizeof(more), 0);
+        if (n <= 0) break;
+        request.body.append(more, n);
+        already_read += n;
     }
 
     return request;
@@ -205,10 +207,11 @@ void RequestHandler::handle(const HttpRequest& request, HttpResponse& response) 
         std::string full_path = base_dir + "/" + filename;
 
         std::ofstream out_file(full_path, std::ios::binary);
-        if (!out_file.is_open()) {
+        if (!out_file.is_open()) {  
             response.sendRaw("HTTP/1.1 500 Internal Server Error\r\n\r\n");
         } else {
             out_file.write(request.body.c_str(), request.body.size());
+            // std::cout << request.body << std::endl;  // test log
             out_file.close();
             response.sendRaw("HTTP/1.1 201 Created\r\n\r\n");
         }
@@ -216,6 +219,24 @@ void RequestHandler::handle(const HttpRequest& request, HttpResponse& response) 
     else {
         response.sendRaw("HTTP/1.1 404 Not Found\r\n\r\n");
     }
+}
+
+
+void handleClient(int client_fd, const std::string& base_dir) {
+    char buffer[4096];
+    int bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    if (bytes_read <= 0) {
+        std::cerr << "Failed to read from client.\n";
+        close(client_fd);
+        return;
+    }
+
+    HttpRequest request = HttpRequest::parse(client_fd, buffer, bytes_read);
+    HttpResponse response(client_fd);
+    RequestHandler handler(base_dir);
+    handler.handle(request, response);
+
+    close(client_fd);
 }
 
 
