@@ -40,8 +40,9 @@ public:
 class HttpResponse {
 private:
     int client_fd;
+    bool should_close;
 public:
-    HttpResponse(int client_fd);
+    HttpResponse(int client_fd, bool should_close = false);
     void sendResponse(const std::string& status, const std::string& content_type,
                       const std::string& body);
     void sendRaw(const std::string& raw);

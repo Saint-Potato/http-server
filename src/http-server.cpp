@@ -152,15 +152,21 @@ HttpRequest HttpRequest::parse(int client_fd, char* buffer, int bytes_read) {
 }
 
 
-HttpResponse::HttpResponse(int client_fd) : client_fd(client_fd) {}
+HttpResponse::HttpResponse(int client_fd, bool should_close) : client_fd(client_fd), should_close(should_close) {}
 
 void HttpResponse::sendResponse(const std::string& status, const std::string& content_type,
                                 const std::string& body) {
     std::ostringstream oss;
     oss << "HTTP/1.1 " << status << "\r\n"
         << "Content-Type: " << content_type << "\r\n"
-        << "Content-Length: " << body.size() << "\r\n"
-        << "\r\n"
+        << "Content-Length: " << body.size() << "\r\n";
+    if(should_close){
+        oss << "Connection: close\r\n";
+    }
+    else{
+        oss << "Connection: keep-alive\r\n";
+    }
+    oss << "\r\n"
         << body;
 
     std::string response = oss.str();
@@ -231,13 +237,22 @@ void handleClient(int client_fd, const std::string& base_dir) {
         }
 
         HttpRequest request = HttpRequest::parse(client_fd, buffer, bytes_read);
-        HttpResponse response(client_fd);
+        // HttpResponse response(client_fd);
+
+        auto conn_it = request.headers.find("connection");
+        bool should_close = (conn_it != request.headers.end() && conn_it->second == "close");
+
+        HttpResponse response(client_fd, should_close);
         RequestHandler handler(base_dir);
         handler.handle(request, response);
 
         // Check if client wants to close the connection
-        auto conn_it = request.headers.find("connection");
-        if (conn_it != request.headers.end() && conn_it->second == "close") {
+        // auto conn_it = request.headers.find("connection");
+        // if (conn_it != request.headers.end() && conn_it->second == "close") {
+        //     break;
+        // }
+
+        if(should_close){
             break;
         }
 
