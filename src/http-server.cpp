@@ -224,17 +224,26 @@ void RequestHandler::handle(const HttpRequest& request, HttpResponse& response) 
 
 void handleClient(int client_fd, const std::string& base_dir) {
     char buffer[4096];
-    int bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes_read <= 0) {
-        std::cerr << "Failed to read from client.\n";
-        close(client_fd);
-        return;
-    }
+    while (true) {
+        int bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+        if (bytes_read <= 0) {
+            break;  // client closed connection or error occurred
+        }
 
-    HttpRequest request = HttpRequest::parse(client_fd, buffer, bytes_read);
-    HttpResponse response(client_fd);
-    RequestHandler handler(base_dir);
-    handler.handle(request, response);
+        HttpRequest request = HttpRequest::parse(client_fd, buffer, bytes_read);
+        HttpResponse response(client_fd);
+        RequestHandler handler(base_dir);
+        handler.handle(request, response);
+
+        // Check if client wants to close the connection
+        auto conn_it = request.headers.find("connection");
+        if (conn_it != request.headers.end() && conn_it->second == "close") {
+            break;
+        }
+
+        // Clear buffer for next request
+        memset(buffer, 0, sizeof(buffer));
+    }
 
     close(client_fd);
 }
