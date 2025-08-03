@@ -1,0 +1,414 @@
+[compile] Compilation successful.
+
+Debug = true
+
+[tester::#KH7] Running tests for Stage #KH7 (Persistent Connections - Connection closure)
+[tester::#KH7] Running program
+[tester::#KH7] $ ./your_program.sh
+[tester::#KH7] Creating connection
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#KH7] $ curl --http1.1 -v http://localhost:4221/ --next http://localhost:4221/user-agent -H "Connection: close" -H "User-Agent: banana/mango" 
+[your_program] Waiting for a client to connect...
+[tester::#KH7] > GET / HTTP/1.1
+[tester::#KH7] > Host: localhost:4221
+[tester::#KH7] > 
+[tester::#KH7] Sent bytes: "GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#KH7] Received bytes: "HTTP/1.1 200 OK\r\n\r\n"
+[tester::#KH7] < HTTP/1.1 200 OK
+[tester::#KH7] < 
+[tester::#KH7] * Connection #0 to host localhost left intact
+[tester::#KH7] Received response with 200 status code
+[tester::#KH7] > GET /user-agent HTTP/1.1
+[tester::#KH7] > Host: localhost:4221
+[tester::#KH7] > Connection: close
+[tester::#KH7] > User-Agent: banana/mango
+[tester::#KH7] > 
+[tester::#KH7] Sent bytes: "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nConnection: close\r\nUser-Agent: banana/mango\r\n\r\n"
+[tester::#KH7] Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nbanana/mango"
+[tester::#KH7] < HTTP/1.1 200 OK
+[tester::#KH7] < Content-Type: text/plain
+[tester::#KH7] < Content-Length: 12
+[tester::#KH7] < Connection: close
+[tester::#KH7] < 
+[tester::#KH7] < banana/mango
+[tester::#KH7] < 
+[tester::#KH7] * Connection #0 to host localhost left intact
+[tester::#KH7] Received response with 200 status code
+[tester::#KH7] ✓ Content-Type header is present
+[tester::#KH7] ✓ Content-Length header is present
+[tester::#KH7] ✓ Connection header is present
+[tester::#KH7] ✓ Body is correct
+[tester::#KH7] Connection #0 is closed
+[tester::#KH7] Test passed.
+[tester::#KH7] Terminating program
+[tester::#KH7] Program terminated successfully
+
+[tester::#UL1] Running tests for Stage #UL1 (Persistent Connections - Concurrent persistent connections)
+[tester::#UL1] Running program
+[tester::#UL1] $ ./your_program.sh
+[tester::#UL1] Creating 2 persistent connections
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[your_program] Waiting for a client to connect...
+[your_program] Waiting for a client to connect...
+[tester::#UL1] Sending first set of requests
+[tester::#UL1] $ curl --http1.1 -v http://localhost:4221/user-agent -H "User-Agent: pineapple/grape" --next http://localhost:4221/echo/apple 
+[tester::#UL1] client-2: > GET /echo/apple HTTP/1.1
+[tester::#UL1] client-2: > Host: localhost:4221
+[tester::#UL1] client-2: > 
+[tester::#UL1] client-2: Sent bytes: "GET /echo/apple HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#UL1] client-2: Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nConnection: keep-alive\r\n\r\napple"
+[tester::#UL1] < HTTP/1.1 200 OK
+[tester::#UL1] < Content-Type: text/plain
+[tester::#UL1] < Content-Length: 5
+[tester::#UL1] < Connection: keep-alive
+[tester::#UL1] < 
+[tester::#UL1] < apple
+[tester::#UL1] < 
+[tester::#UL1] * Connection #1 to host localhost left intact
+[tester::#UL1] Received response with 200 status code
+[tester::#UL1] ✓ Content-Type header is present
+[tester::#UL1] ✓ Content-Length header is present
+[tester::#UL1] ✓ Body is correct
+[tester::#UL1] client-1: > GET /user-agent HTTP/1.1
+[tester::#UL1] client-1: > Host: localhost:4221
+[tester::#UL1] client-1: > User-Agent: pineapple/grape
+[tester::#UL1] client-1: > 
+[tester::#UL1] client-1: Sent bytes: "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: pineapple/grape\r\n\r\n"
+[tester::#UL1] client-1: Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 15\r\nConnection: keep-alive\r\n\r\npineapple/grape"
+[tester::#UL1] < HTTP/1.1 200 OK
+[tester::#UL1] < Content-Type: text/plain
+[tester::#UL1] < Content-Length: 15
+[tester::#UL1] < Connection: keep-alive
+[tester::#UL1] < 
+[tester::#UL1] < pineapple/grape
+[tester::#UL1] < 
+[tester::#UL1] * Connection #0 to host localhost left intact
+[tester::#UL1] Received response with 200 status code
+[tester::#UL1] ✓ Content-Type header is present
+[tester::#UL1] ✓ Content-Length header is present
+[tester::#UL1] ✓ Body is correct
+[tester::#UL1] Sending second set of requests
+[tester::#UL1] $ curl --http1.1 -v http://localhost:4221/user-agent -H "User-Agent: pineapple/grape" --next http://localhost:4221/echo/apple 
+[tester::#UL1] * Re-using existing connection with host localhost
+[tester::#UL1] client-1: > GET /user-agent HTTP/1.1
+[tester::#UL1] client-1: > Host: localhost:4221
+[tester::#UL1] client-1: > User-Agent: pineapple/grape
+[tester::#UL1] client-1: > 
+[tester::#UL1] client-1: Sent bytes: "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: pineapple/grape\r\n\r\n"
+[tester::#UL1] client-1: Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 15\r\nConnection: keep-alive\r\n\r\npineapple/grape"
+[tester::#UL1] < HTTP/1.1 200 OK
+[tester::#UL1] < Content-Type: text/plain
+[tester::#UL1] < Content-Length: 15
+[tester::#UL1] < Connection: keep-alive
+[tester::#UL1] < 
+[tester::#UL1] < pineapple/grape
+[tester::#UL1] < 
+[tester::#UL1] * Connection #0 to host localhost left intact
+[tester::#UL1] Received response with 200 status code
+[tester::#UL1] ✓ Content-Type header is present
+[tester::#UL1] ✓ Content-Length header is present
+[tester::#UL1] ✓ Body is correct
+[tester::#UL1] * Re-using existing connection with host localhost
+[tester::#UL1] client-2: > GET /echo/apple HTTP/1.1
+[tester::#UL1] client-2: > Host: localhost:4221
+[tester::#UL1] client-2: > 
+[tester::#UL1] client-2: Sent bytes: "GET /echo/apple HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#UL1] client-2: Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nConnection: keep-alive\r\n\r\napple"
+[tester::#UL1] < HTTP/1.1 200 OK
+[tester::#UL1] < Content-Type: text/plain
+[tester::#UL1] < Content-Length: 5
+[tester::#UL1] < Connection: keep-alive
+[tester::#UL1] < 
+[tester::#UL1] < apple
+[tester::#UL1] < 
+[tester::#UL1] * Connection #1 to host localhost left intact
+[tester::#UL1] Received response with 200 status code
+[tester::#UL1] ✓ Content-Type header is present
+[tester::#UL1] ✓ Content-Length header is present
+[tester::#UL1] ✓ Body is correct
+[tester::#UL1] Test passed.
+[tester::#UL1] Terminating program
+[tester::#UL1] Program terminated successfully
+
+[tester::#AG9] Running tests for Stage #AG9 (Persistent Connections - Persistent connections)
+[tester::#AG9] Running program
+[tester::#AG9] $ ./your_program.sh
+[tester::#AG9] Creating connection
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#AG9] $ curl --http1.1 -v http://localhost:4221/user-agent -H "User-Agent: grape/mango-pear" --next http://localhost:4221/ 
+[your_program] Waiting for a client to connect...
+[tester::#AG9] > GET /user-agent HTTP/1.1
+[tester::#AG9] > Host: localhost:4221
+[tester::#AG9] > User-Agent: grape/mango-pear
+[tester::#AG9] > 
+[tester::#AG9] Sent bytes: "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: grape/mango-pear\r\n\r\n"
+[tester::#AG9] Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 16\r\nConnection: keep-alive\r\n\r\ngrape/mango-pear"
+[tester::#AG9] < HTTP/1.1 200 OK
+[tester::#AG9] < Content-Type: text/plain
+[tester::#AG9] < Content-Length: 16
+[tester::#AG9] < Connection: keep-alive
+[tester::#AG9] < 
+[tester::#AG9] < grape/mango-pear
+[tester::#AG9] < 
+[tester::#AG9] * Connection #0 to host localhost left intact
+[tester::#AG9] Received response with 200 status code
+[tester::#AG9] ✓ Content-Type header is present
+[tester::#AG9] ✓ Content-Length header is present
+[tester::#AG9] ✓ Body is correct
+[tester::#AG9] * Re-using existing connection with host localhost
+[tester::#AG9] > GET / HTTP/1.1
+[tester::#AG9] > Host: localhost:4221
+[tester::#AG9] > 
+[tester::#AG9] Sent bytes: "GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#AG9] Received bytes: "HTTP/1.1 200 OK\r\n\r\n"
+[tester::#AG9] < HTTP/1.1 200 OK
+[tester::#AG9] < 
+[tester::#AG9] * Connection #0 to host localhost left intact
+[tester::#AG9] Received response with 200 status code
+[tester::#AG9] Test passed.
+[tester::#AG9] Terminating program
+[tester::#AG9] Program terminated successfully
+
+[tester::#QV8] Running tests for Stage #QV8 (Read request body)
+[tester::#QV8] Running program
+[tester::#QV8] $ ./your_program.sh --directory /tmp/data/codecrafters.io/http-server-tester/
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#QV8] Connected to localhost port 4221
+[tester::#QV8] $ curl -v -X POST http://localhost:4221/files/apple_pear_banana_pear -H "Content-Length: 76" -H "Content-Type: application/octet-stream" -d 'mango blueberry pineapple strawberry blueberry raspberry pineapple blueberry'
+[tester::#QV8] > POST /files/apple_pear_banana_pear HTTP/1.1
+[tester::#QV8] > Host: localhost:4221
+[tester::#QV8] > Content-Length: 76
+[tester::#QV8] > Content-Type: application/octet-stream
+[tester::#QV8] > 
+[tester::#QV8] > mango blueberry pineapple strawberry blueberry raspberry pineapple blueberry
+[tester::#QV8] > 
+[tester::#QV8] Sent bytes: "POST /files/apple_pear_banana_pear HTTP/1.1\r\nHost: localhost:4221\r\nContent-Length: 76\r\nContent-Type: application/octet-stream\r\n\r\nmango blueberry pineapple strawberry blueberry raspberry pineapple blueberry"
+[your_program] Waiting for a client to connect...
+[tester::#QV8] Received bytes: "HTTP/1.1 201 Created\r\n\r\n"
+[tester::#QV8] < HTTP/1.1 201 Created
+[tester::#QV8] < 
+[tester::#QV8] Received response with 201 status code
+[tester::#QV8] Validating file `apple_pear_banana_pear` exists on disk
+[tester::#QV8] Validating file `apple_pear_banana_pear` content
+[tester::#QV8] Test passed.
+[tester::#QV8] Terminating program
+[tester::#QV8] Program terminated successfully
+
+[tester::#AP6] Running tests for Stage #AP6 (Return a file)
+[tester::#AP6] Running program
+[tester::#AP6] $ ./your_program.sh --directory /tmp/data/codecrafters.io/http-server-tester/
+[tester::#AP6] Testing existing file
+[tester::#AP6] Creating file banana_banana_pear_banana in /tmp/data/codecrafters.io/http-server-tester/
+[tester::#AP6] File Content: "raspberry blueberry strawberry mango pear strawberry mango orange"
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#AP6] Connected to localhost port 4221
+[tester::#AP6] $ curl -v http://localhost:4221/files/banana_banana_pear_banana
+[tester::#AP6] > GET /files/banana_banana_pear_banana HTTP/1.1
+[tester::#AP6] > Host: localhost:4221
+[tester::#AP6] > 
+[tester::#AP6] Sent bytes: "GET /files/banana_banana_pear_banana HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[your_program] Waiting for a client to connect...
+[tester::#AP6] Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: 65\r\nConnection: keep-alive\r\n\r\nraspberry blueberry strawberry mango pear strawberry mango orange"
+[tester::#AP6] < HTTP/1.1 200 OK
+[tester::#AP6] < Content-Type: application/octet-stream
+[tester::#AP6] < Content-Length: 65
+[tester::#AP6] < Connection: keep-alive
+[tester::#AP6] < 
+[tester::#AP6] < raspberry blueberry strawberry mango pear strawberry mango orange
+[tester::#AP6] < 
+[tester::#AP6] Received response with 200 status code
+[tester::#AP6] ✓ Content-Type header is present
+[tester::#AP6] ✓ Content-Length header is present
+[tester::#AP6] ✓ Body is correct
+[tester::#AP6] First test passed.
+[tester::#AP6] Testing non existent file returns 404
+[tester::#AP6] Connected to localhost port 4221
+[tester::#AP6] $ curl -v http://localhost:4221/files/non-existentorange_apple_strawberry_mango
+[tester::#AP6] > GET /files/non-existentorange_apple_strawberry_mango HTTP/1.1
+[tester::#AP6] > Host: localhost:4221
+[tester::#AP6] > 
+[tester::#AP6] Sent bytes: "GET /files/non-existentorange_apple_strawberry_mango HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[your_program] Waiting for a client to connect...
+[tester::#AP6] Received bytes: "HTTP/1.1 404 Not Found\r\n\r\n"
+[tester::#AP6] < HTTP/1.1 404 Not Found
+[tester::#AP6] < 
+[tester::#AP6] Received response with 404 status code
+[tester::#AP6] Test passed.
+[tester::#AP6] Terminating program
+[tester::#AP6] Program terminated successfully
+
+[tester::#EJ5] Running tests for Stage #EJ5 (Concurrent connections)
+[tester::#EJ5] Running program
+[tester::#EJ5] $ ./your_program.sh
+[tester::#EJ5] Creating 2 parallel connections
+[tester::#EJ5] Creating connection 1
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#EJ5] Creating connection 2
+[tester::#EJ5] Sending first set of requests
+[your_program] Waiting for a client to connect...
+[your_program] Waiting for a client to connect...
+[tester::#EJ5] client-2: $ curl -v http://localhost:4221/
+[tester::#EJ5] client-2: > GET / HTTP/1.1
+[tester::#EJ5] client-2: > Host: localhost:4221
+[tester::#EJ5] client-2: > 
+[tester::#EJ5] client-2: Sent bytes: "GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#EJ5] client-2: Received bytes: "HTTP/1.1 200 OK\r\n\r\n"
+[tester::#EJ5] client-2: < HTTP/1.1 200 OK
+[tester::#EJ5] client-2: < 
+[tester::#EJ5] Received response with 200 status code
+[tester::#EJ5] Closing connection 2
+[tester::#EJ5] client-1: $ curl -v http://localhost:4221/
+[tester::#EJ5] client-1: > GET / HTTP/1.1
+[tester::#EJ5] client-1: > Host: localhost:4221
+[tester::#EJ5] client-1: > 
+[tester::#EJ5] client-1: Sent bytes: "GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#EJ5] client-1: Received bytes: "HTTP/1.1 200 OK\r\n\r\n"
+[tester::#EJ5] client-1: < HTTP/1.1 200 OK
+[tester::#EJ5] client-1: < 
+[tester::#EJ5] Received response with 200 status code
+[tester::#EJ5] Closing connection 1
+[tester::#EJ5] Creating 2 parallel connections
+[tester::#EJ5] Creating connection 1
+[your_program] Waiting for a client to connect...
+[tester::#EJ5] Creating connection 2
+[tester::#EJ5] Sending second set of requests
+[your_program] Waiting for a client to connect...
+[tester::#EJ5] client-1: $ curl -v http://localhost:4221/
+[tester::#EJ5] client-1: > GET / HTTP/1.1
+[tester::#EJ5] client-1: > Host: localhost:4221
+[tester::#EJ5] client-1: > 
+[tester::#EJ5] client-1: Sent bytes: "GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#EJ5] client-1: Received bytes: "HTTP/1.1 200 OK\r\n\r\n"
+[tester::#EJ5] client-1: < HTTP/1.1 200 OK
+[tester::#EJ5] client-1: < 
+[tester::#EJ5] Received response with 200 status code
+[tester::#EJ5] Closing connection 1
+[tester::#EJ5] client-2: $ curl -v http://localhost:4221/
+[tester::#EJ5] client-2: > GET / HTTP/1.1
+[tester::#EJ5] client-2: > Host: localhost:4221
+[tester::#EJ5] client-2: > 
+[tester::#EJ5] client-2: Sent bytes: "GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[tester::#EJ5] client-2: Received bytes: "HTTP/1.1 200 OK\r\n\r\n"
+[tester::#EJ5] client-2: < HTTP/1.1 200 OK
+[tester::#EJ5] client-2: < 
+[tester::#EJ5] Received response with 200 status code
+[tester::#EJ5] Closing connection 2
+[tester::#EJ5] Test passed.
+[tester::#EJ5] Terminating program
+[tester::#EJ5] Program terminated successfully
+
+[tester::#FS3] Running tests for Stage #FS3 (Read header)
+[tester::#FS3] Running program
+[tester::#FS3] $ ./your_program.sh
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#FS3] Connected to localhost port 4221
+[tester::#FS3] $ curl -v http://localhost:4221/user-agent -H "User-Agent: blueberry/grape-pineapple"
+[tester::#FS3] > GET /user-agent HTTP/1.1
+[tester::#FS3] > Host: localhost:4221
+[tester::#FS3] > User-Agent: blueberry/grape-pineapple
+[tester::#FS3] > 
+[tester::#FS3] Sent bytes: "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: blueberry/grape-pineapple\r\n\r\n"
+[tester::#FS3] Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 25\r\nConnection: keep-alive\r\n\r\nblueberry/grape-pineapple"
+[tester::#FS3] < HTTP/1.1 200 OK
+[tester::#FS3] < Content-Type: text/plain
+[tester::#FS3] < Content-Length: 25
+[tester::#FS3] < Connection: keep-alive
+[tester::#FS3] < 
+[tester::#FS3] < blueberry/grape-pineapple
+[tester::#FS3] < 
+[tester::#FS3] Received response with 200 status code
+[tester::#FS3] ✓ Content-Type header is present
+[tester::#FS3] ✓ Content-Length header is present
+[tester::#FS3] ✓ Body is correct
+[your_program] Waiting for a client to connect...
+[tester::#FS3] Test passed.
+[tester::#FS3] Terminating program
+[tester::#FS3] Program terminated successfully
+
+[tester::#CN2] Running tests for Stage #CN2 (Respond with body)
+[tester::#CN2] Running program
+[tester::#CN2] $ ./your_program.sh
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#CN2] Connected to localhost port 4221
+[tester::#CN2] $ curl -v http://localhost:4221/echo/raspberry
+[tester::#CN2] > GET /echo/raspberry HTTP/1.1
+[tester::#CN2] > Host: localhost:4221
+[tester::#CN2] > 
+[tester::#CN2] Sent bytes: "GET /echo/raspberry HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[your_program] Waiting for a client to connect...
+[tester::#CN2] Received bytes: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 9\r\nConnection: keep-alive\r\n\r\nraspberry"
+[tester::#CN2] < HTTP/1.1 200 OK
+[tester::#CN2] < Content-Type: text/plain
+[tester::#CN2] < Content-Length: 9
+[tester::#CN2] < Connection: keep-alive
+[tester::#CN2] < 
+[tester::#CN2] < raspberry
+[tester::#CN2] < 
+[tester::#CN2] Received response with 200 status code
+[tester::#CN2] ✓ Content-Type header is present
+[tester::#CN2] ✓ Content-Length header is present
+[tester::#CN2] ✓ Body is correct
+[tester::#CN2] Test passed.
+[tester::#CN2] Terminating program
+[tester::#CN2] Program terminated successfully
+
+[tester::#IH0] Running tests for Stage #IH0 (Extract URL path)
+[tester::#IH0] Running program
+[tester::#IH0] $ ./your_program.sh
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#IH0] Connected to localhost port 4221
+[tester::#IH0] $ curl -v http://localhost:4221/pineapple
+[tester::#IH0] > GET /pineapple HTTP/1.1
+[tester::#IH0] > Host: localhost:4221
+[tester::#IH0] > 
+[tester::#IH0] Sent bytes: "GET /pineapple HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[your_program] Waiting for a client to connect...
+[tester::#IH0] Received bytes: "HTTP/1.1 404 Not Found\r\n\r\n"
+[tester::#IH0] < HTTP/1.1 404 Not Found
+[tester::#IH0] < 
+[tester::#IH0] Received response with 404 status code
+[tester::#IH0] Test passed.
+[tester::#IH0] Terminating program
+[tester::#IH0] Program terminated successfully
+
+[tester::#IA4] Running tests for Stage #IA4 (Respond with 200)
+[tester::#IA4] Running program
+[tester::#IA4] $ ./your_program.sh
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#IA4] Connected to localhost port 4221
+[tester::#IA4] $ curl -v http://localhost:4221/
+[tester::#IA4] > GET / HTTP/1.1
+[tester::#IA4] > Host: localhost:4221
+[tester::#IA4] > 
+[tester::#IA4] Sent bytes: "GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
+[your_program] Waiting for a client to connect...
+[tester::#IA4] Received bytes: "HTTP/1.1 200 OK\r\n\r\n"
+[tester::#IA4] < HTTP/1.1 200 OK
+[tester::#IA4] < 
+[tester::#IA4] Received response with 200 status code
+[tester::#IA4] Test passed.
+[tester::#IA4] Terminating program
+[tester::#IA4] Program terminated successfully
+
+[tester::#AT4] Running tests for Stage #AT4 (Bind to a port)
+[tester::#AT4] Running program
+[tester::#AT4] $ ./your_program.sh
+[tester::#AT4] Connecting to localhost:4221 using TCP
+[your_program] [HttpServer] Listening on port 4221
+[your_program] Waiting for a client to connect...
+[tester::#AT4] Success! Closing connection
+[tester::#AT4] Test passed.
+[tester::#AT4] Terminating program
+[tester::#AT4] Program terminated successfully
+
+Test passed. Congrats!
