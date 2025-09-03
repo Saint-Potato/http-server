@@ -29,6 +29,12 @@ The server will start and listen on port 4221 by default.
 
 ## Testing
 
+To run the tests, execute the script from the project's root directory:
+
+```sh
+python3 complete_test.py
+```
+
 The server has been tested for various functionalities, including:
 *   Binding to a port
 *   Responding with 200 OK
